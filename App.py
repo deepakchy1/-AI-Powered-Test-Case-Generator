@@ -170,16 +170,31 @@ if generate_button:
     else:
         base_prompt = "Generate test cases based on the following input."
 
-    if uploaded_file and input_type.startswith("Image"):
+    if input_type == "Image (UI Screenshot)":
+        if uploaded_file is None:
+            st.warning("Please upload a UI screenshot before generating.", icon="⚠️")
+            st.stop()
         image = Image.open(uploaded_file)
         content_to_process = [base_prompt, image]
-    elif uploaded_file and input_type.startswith("PDF"):
+
+    elif input_type == "PDF (Requirements Doc)":
+        if uploaded_file is None:
+            st.warning("Please upload a requirements PDF before generating.", icon="⚠️")
+            st.stop()
         pdf_text = process_pdf(uploaded_file)
-        if pdf_text:
-            content_to_process = [f"{base_prompt}\n\nPDF Content:\n{pdf_text}"]
-    elif user_text.strip():
+        if not pdf_text:
+            st.error("Failed to extract text from the PDF. Please try a different file.", icon="🚨")
+            st.stop()
+        content_to_process = [f"{base_prompt}\n\nPDF Content:\n{pdf_text}"]
+
+    elif input_type == "Text (User Story)":
+        if not user_text.strip():
+            st.warning("Please paste a user story or requirements text before generating.", icon="⚠️")
+            st.stop()
         content_to_process = [f"{base_prompt}\n\nUser Story/Text:\n{user_text}"]
+    
     else:
+        # This case is a fallback and likely won't be reached
         st.warning("Please provide an input (Image, PDF, or Text) before generating.", icon="⚠️")
         st.stop()
     
@@ -205,7 +220,6 @@ if generate_button:
                 st.error(f"An error occurred: {e}", icon="🚨")
                 st.session_state.response_text = ""
                 st.session_state.summary_text = ""
-
 
 # Display the results if they exist in session state
 if st.session_state.response_text:
@@ -258,4 +272,5 @@ if st.session_state.response_text:
     except Exception as e:
         st.error(f"Failed to process the response into a downloadable file. Error: {e}", icon="🚨")
 else:
+
     st.info("The generated test cases will appear here after you click the generate button.")
